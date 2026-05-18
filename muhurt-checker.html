@@ -1,0 +1,978 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Muhurt Nirnaya · Muhurt Checker</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700&family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Tiro+Devanagari+Sanskrit:ital@0;1&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:           #f4ebd0;
+    --bg-deep:      #e8dab2;
+    --bg-card:      #faf3df;
+    --bg-soft:      #f0e3c0;
+    --primary:      #6b1e1e;
+    --primary-dark: #4a1212;
+    --gold:         #b8860b;
+    --gold-light:   #daa520;
+    --gold-pale:    #e8c878;
+    --text:         #2d1810;
+    --text-soft:    #5d4435;
+    --text-mute:    #876649;
+    --border:       #c4a76a;
+    --border-soft:  #d8c08a;
+    --best:  #2d5f1a;
+    --good:  #5a7c2a;
+    --mid:   #b07c2a;
+    --avoid: #a85a2a;
+    --worst: #7a1818;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body {
+    font-family: 'EB Garamond', Georgia, serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+    min-height: 100vh;
+    background-image:
+      radial-gradient(ellipse at top, rgba(184,134,11,0.10), transparent 60%),
+      radial-gradient(ellipse at bottom, rgba(107,30,30,0.06), transparent 60%);
+    overflow-x: hidden;
+  }
+  body::before {
+    content: '';
+    position: fixed; inset: 0;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='400' height='400'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2'/></filter><rect width='400' height='400' filter='url(%23n)' opacity='0.06'/></svg>");
+    pointer-events: none; z-index: 0;
+  }
+  .container { position: relative; z-index: 1; max-width: 1080px; margin: 0 auto; padding: 24px 16px 80px; }
+
+  /* Hero */
+  .hero { text-align: center; padding: 32px 12px 28px; }
+  .hero-ornament { width: 72px; height: 72px; margin: 0 auto 14px; color: var(--gold); animation: slowSpin 80s linear infinite; }
+  @keyframes slowSpin { from { transform: rotate(0); } to { transform: rotate(360deg); } }
+  .title-sanskrit { font-family: 'Tiro Devanagari Sanskrit', serif; font-size: clamp(1.5rem, 5vw, 2.1rem); color: var(--primary); margin-bottom: 4px; font-weight: 400; }
+  .title-en { font-family: 'Cinzel', serif; font-weight: 600; font-size: clamp(1.7rem, 5vw, 2.6rem); letter-spacing: 0.18em; text-transform: uppercase; color: var(--primary); margin-bottom: 14px; }
+  .divider { display: block; margin: 14px auto; color: var(--gold); width: min(220px, 60%); height: 18px; }
+  .subtitle { font-style: italic; color: var(--text-soft); font-size: 1rem; max-width: 560px; margin: 0 auto; }
+  .subtitle .om { color: var(--primary); font-family: 'Tiro Devanagari Sanskrit', serif; font-style: normal; }
+
+  /* Section titles */
+  .section-title {
+    font-family: 'Cinzel', serif; font-weight: 500; font-size: 0.92rem;
+    text-transform: uppercase; letter-spacing: 0.22em; color: var(--primary);
+    margin: 36px 0 18px; display: flex; align-items: center; gap: 14px;
+  }
+  .section-title::before, .section-title::after {
+    content: ''; flex: 1; height: 1px;
+    background: linear-gradient(90deg, transparent, var(--border) 30%, var(--border) 70%, transparent);
+  }
+  .section-title .num { font-family: 'Tiro Devanagari Sanskrit', serif; color: var(--gold); font-size: 1.2em; margin-right: 2px; }
+
+  /* Activity grid */
+  .activity-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
+  .activity-card {
+    padding: 16px 10px 14px; background: var(--bg-card);
+    border: 1px solid var(--border-soft); border-radius: 4px;
+    text-align: center; cursor: pointer; transition: all 0.2s ease;
+    position: relative; overflow: hidden;
+  }
+  .activity-card::before {
+    content: ''; position: absolute; inset: 0;
+    background: radial-gradient(circle at center, rgba(218,165,32,0.12), transparent 70%);
+    opacity: 0; transition: opacity 0.3s;
+  }
+  .activity-card:hover { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(107,30,30,0.10); border-color: var(--gold); }
+  .activity-card:hover::before { opacity: 1; }
+  .activity-card.selected { background: var(--primary); color: var(--bg); border-color: var(--primary-dark); }
+  .activity-card.selected .a-sanskrit { color: var(--gold-pale); }
+  .a-icon { font-size: 1.7rem; display: block; margin-bottom: 6px; line-height: 1; }
+  .a-name { font-weight: 500; font-size: 0.94rem; margin-bottom: 2px; line-height: 1.2; }
+  .a-sanskrit { font-family: 'Tiro Devanagari Sanskrit', serif; font-size: 0.82rem; color: var(--text-mute); line-height: 1.3; }
+
+  /* Range buttons */
+  .range-buttons { display: flex; flex-wrap: wrap; gap: 8px; }
+  .range-btn {
+    padding: 9px 18px; background: var(--bg-card);
+    border: 1px solid var(--border-soft); border-radius: 24px;
+    cursor: pointer; font-family: inherit; font-size: 0.95rem;
+    color: var(--text); transition: all 0.2s;
+  }
+  .range-btn:hover { background: var(--bg-deep); border-color: var(--gold); }
+  .range-btn.selected { background: var(--gold); border-color: var(--gold-light); color: var(--bg); box-shadow: 0 2px 8px rgba(184,134,11,0.3); }
+  .custom-inputs { display: none; margin-top: 14px; gap: 16px; flex-wrap: wrap; align-items: flex-end; }
+  .custom-inputs.show { display: flex; }
+  .input-group { display: flex; flex-direction: column; gap: 4px; }
+  .input-group label {
+    font-size: 0.8rem; color: var(--text-mute); font-family: 'Cinzel', serif;
+    letter-spacing: 0.1em; text-transform: uppercase;
+  }
+  .custom-inputs input {
+    padding: 8px 12px; border: 1px solid var(--border); background: var(--bg-card);
+    border-radius: 4px; font-family: inherit; font-size: 0.95rem; color: var(--text); min-width: 150px;
+  }
+
+  /* Results header */
+  .results-summary {
+    display: flex; justify-content: space-between; align-items: center;
+    flex-wrap: wrap; gap: 14px; margin-bottom: 18px; color: var(--text-soft);
+  }
+  .results-summary .count { font-style: italic; font-size: 0.98rem; }
+  .results-summary .count strong { color: var(--primary); font-style: normal; font-family: 'Cinzel', serif; font-weight: 600; }
+  .filter-toggle { display: inline-flex; align-items: center; gap: 10px; font-size: 0.92rem; cursor: pointer; user-select: none; color: var(--text); }
+  .toggle {
+    position: relative; width: 38px; height: 22px; background: var(--border-soft);
+    border-radius: 11px; cursor: pointer; transition: 0.2s; flex-shrink: 0;
+  }
+  .toggle::after {
+    content: ''; position: absolute; top: 2px; left: 2px; width: 18px; height: 18px;
+    background: white; border-radius: 50%; transition: 0.2s; box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+  }
+  .toggle.on { background: var(--primary); }
+  .toggle.on::after { left: 18px; }
+  .legend {
+    display: flex; flex-wrap: wrap; justify-content: center; gap: 16px;
+    padding: 14px 18px; background: rgba(244,235,208,0.6);
+    border: 1px solid var(--border-soft); border-radius: 4px;
+    margin: 18px 0 24px; font-size: 0.88rem;
+  }
+  .legend-item { display: flex; align-items: center; gap: 7px; }
+  .legend-dot { width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; }
+
+  /* Day card */
+  .day-card {
+    background: var(--bg-card); border: 1px solid var(--border-soft); border-radius: 6px;
+    padding: 22px 24px; margin-bottom: 18px; position: relative; overflow: hidden;
+    animation: cardIn 0.4s ease backwards;
+  }
+  @keyframes cardIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+  .day-card::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 5px; }
+  .day-card[data-rating="best"]::before  { background: var(--best); }
+  .day-card[data-rating="good"]::before  { background: var(--good); }
+  .day-card[data-rating="mid"]::before   { background: var(--mid); }
+  .day-card[data-rating="avoid"]::before { background: var(--avoid); }
+  .day-card[data-rating="worst"]::before { background: var(--worst); }
+  .day-card[data-rating="best"] { background: linear-gradient(135deg, var(--bg-card), rgba(45,95,26,0.04)); border-color: rgba(45,95,26,0.3); }
+
+  .day-header { display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 14px; margin-bottom: 16px; }
+  .day-date { display: flex; flex-direction: column; gap: 2px; }
+  .day-gregorian { font-family: 'Cinzel', serif; font-size: 1.18rem; font-weight: 600; color: var(--primary); letter-spacing: 0.03em; }
+  .day-weekday { font-size: 0.95rem; color: var(--text-soft); font-style: italic; }
+  .day-vara-hindi { font-family: 'Tiro Devanagari Sanskrit', serif; font-size: 0.88rem; color: var(--text-mute); }
+  .day-rating-cluster { display: flex; align-items: center; gap: 14px; }
+  .rating-badge {
+    padding: 6px 14px 7px; border-radius: 24px; font-family: 'Cinzel', serif;
+    font-weight: 600; font-size: 0.82rem; letter-spacing: 0.12em;
+    text-transform: uppercase; color: white; white-space: nowrap;
+  }
+  .rating-badge[data-rating="best"]  { background: var(--best); }
+  .rating-badge[data-rating="good"]  { background: var(--good); }
+  .rating-badge[data-rating="mid"]   { background: var(--mid); }
+  .rating-badge[data-rating="avoid"] { background: var(--avoid); }
+  .rating-badge[data-rating="worst"] { background: var(--worst); }
+  .score-block { display: flex; align-items: baseline; gap: 4px; font-family: 'Cinzel', serif; }
+  .score-num { font-size: 1.7rem; font-weight: 600; color: var(--text); line-height: 1; }
+  .score-out { font-size: 0.85rem; color: var(--text-mute); }
+
+  /* Panchang grid */
+  .panchang-grid {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 12px 18px; padding: 16px 18px;
+    background: rgba(232,218,178,0.4); border: 1px dashed var(--border);
+    border-radius: 4px; margin-bottom: 16px;
+  }
+  .p-item { display: flex; flex-direction: column; gap: 1px; }
+  .p-label { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.14em; color: var(--text-mute); font-family: 'Cinzel', serif; font-weight: 500; }
+  .p-value { font-weight: 500; color: var(--text); font-size: 1.02rem; line-height: 1.25; }
+  .p-value .hindi { display: block; font-family: 'Tiro Devanagari Sanskrit', serif; font-size: 0.88em; color: var(--text-soft); font-weight: 400; margin-top: 1px; }
+
+  /* Reasons */
+  .reasons { display: flex; flex-direction: column; gap: 6px; margin-bottom: 16px; }
+  .reason { display: flex; gap: 10px; align-items: flex-start; font-size: 0.96rem; color: var(--text); }
+  .reason-icon {
+    flex-shrink: 0; width: 18px; height: 18px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.65rem; font-weight: 700; color: white; margin-top: 3px; line-height: 1;
+  }
+  .reason.positive .reason-icon { background: var(--best); }
+  .reason.negative .reason-icon { background: var(--worst); }
+  .reason.neutral  .reason-icon { background: var(--text-mute); }
+
+  /* Timings */
+  .timings { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px; margin-top: 14px; }
+  .timing-block { padding: 10px 14px; border-radius: 4px; border: 1px solid var(--border-soft); background: var(--bg-soft); }
+  .timing-block.auspicious { background: rgba(45,95,26,0.07); border-color: rgba(45,95,26,0.28); }
+  .timing-block.inauspicious { background: rgba(122,24,24,0.06); border-color: rgba(122,24,24,0.25); }
+  .timing-label { font-family: 'Cinzel', serif; font-size: 0.74rem; text-transform: uppercase; letter-spacing: 0.12em; margin-bottom: 3px; font-weight: 500; }
+  .timing-block.auspicious .timing-label { color: var(--best); }
+  .timing-block.inauspicious .timing-label { color: var(--worst); }
+  .timing-value { font-weight: 600; font-size: 1.0rem; color: var(--text); }
+  .timing-sub { font-size: 0.8rem; color: var(--text-mute); font-style: italic; margin-top: 2px; }
+
+  .activity-note {
+    margin: 16px 0 0; padding: 12px 16px;
+    background: rgba(184,134,11,0.08); border-left: 3px solid var(--gold);
+    border-radius: 0 4px 4px 0; font-style: italic; font-size: 0.92rem; color: var(--text-soft);
+  }
+
+  .empty { text-align: center; padding: 40px 20px; color: var(--text-mute); font-style: italic; }
+  .empty .om { font-family: 'Tiro Devanagari Sanskrit', serif; font-size: 2rem; color: var(--gold); display: block; margin-bottom: 10px; font-style: normal; }
+
+  .footer-note { margin-top: 60px; text-align: center; font-size: 0.82rem; color: var(--text-mute); line-height: 1.8; }
+  .footer-note::before { content: ''; display: block; width: 120px; height: 1px; margin: 30px auto 18px; background: linear-gradient(90deg, transparent, var(--border), transparent); }
+  .footer-note .closing { font-family: 'Tiro Devanagari Sanskrit', serif; color: var(--primary); font-size: 1rem; display: block; margin-top: 10px; }
+
+  @media (max-width: 640px) {
+    .container { padding: 18px 12px 60px; }
+    .activity-grid { grid-template-columns: repeat(2, 1fr); gap: 8px; }
+    .day-card { padding: 18px 16px; }
+    .day-rating-cluster { gap: 10px; }
+    .score-num { font-size: 1.4rem; }
+    .timings { grid-template-columns: 1fr; }
+    .panchang-grid { padding: 14px; gap: 10px 14px; }
+    .legend { gap: 10px 14px; padding: 12px; font-size: 0.82rem; }
+    .section-title { font-size: 0.82rem; letter-spacing: 0.18em; }
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+
+  <header class="hero">
+    <svg class="hero-ornament" viewBox="0 0 80 80" fill="none" aria-hidden="true">
+      <circle cx="40" cy="40" r="5" fill="currentColor"/>
+      <g stroke="currentColor" stroke-width="0.7" fill="none">
+        <line x1="40" y1="8"  x2="40" y2="20"/>
+        <line x1="40" y1="60" x2="40" y2="72"/>
+        <line x1="8"  y1="40" x2="20" y2="40"/>
+        <line x1="60" y1="40" x2="72" y2="40"/>
+        <line x1="17" y1="17" x2="25" y2="25"/>
+        <line x1="55" y1="55" x2="63" y2="63"/>
+        <line x1="63" y1="17" x2="55" y2="25"/>
+        <line x1="25" y1="55" x2="17" y2="63"/>
+      </g>
+      <circle cx="40" cy="40" r="14" stroke="currentColor" stroke-width="0.5" fill="none" stroke-dasharray="1 2.5"/>
+      <circle cx="40" cy="40" r="26" stroke="currentColor" stroke-width="0.4" fill="none" stroke-dasharray="3 5"/>
+      <circle cx="40" cy="40" r="34" stroke="currentColor" stroke-width="0.3" fill="none" opacity="0.5"/>
+    </svg>
+    <div class="title-sanskrit">मुहूर्त निर्णय</div>
+    <h1 class="title-en">Muhurt Checker</h1>
+    <svg class="divider" viewBox="0 0 220 18" fill="none" aria-hidden="true">
+      <line x1="2"   y1="9" x2="90"  y2="9" stroke="currentColor" stroke-width="0.6"/>
+      <circle cx="110" cy="9" r="3.5" stroke="currentColor" stroke-width="0.8" fill="none"/>
+      <circle cx="110" cy="9" r="1.2" fill="currentColor"/>
+      <line x1="130" y1="9" x2="218" y2="9" stroke="currentColor" stroke-width="0.6"/>
+    </svg>
+    <p class="subtitle">Discover auspicious moments for every <em>śubh kārya</em> — drawn from the ancient Pañcāṅga of Tithi, Nakṣatra, Yoga, Karaṇa, and Vāra. <span class="om">॥ शुभस्य शीघ्रम् ॥</span></p>
+  </header>
+
+  <h2 class="section-title"><span class="num">१</span> Choose your Shubh Karya</h2>
+  <div class="activity-grid" id="activityGrid"></div>
+
+  <h2 class="section-title"><span class="num">२</span> Choose your range</h2>
+  <div class="range-buttons" id="rangeButtons"></div>
+  <div class="custom-inputs" id="customInputs">
+    <div class="input-group">
+      <label for="dateFrom">From</label>
+      <input type="date" id="dateFrom">
+    </div>
+    <div class="input-group">
+      <label for="dateTo">To</label>
+      <input type="date" id="dateTo">
+    </div>
+  </div>
+
+  <h2 class="section-title"><span class="num">३</span> Auspicious Calendar</h2>
+  <div class="results-summary">
+    <div class="count" id="summary"></div>
+    <label class="filter-toggle">
+      <span>Show only auspicious (Best + Good)</span>
+      <span class="toggle" id="bestOnlyToggle" role="switch" aria-checked="false"></span>
+    </label>
+  </div>
+  <div class="legend">
+    <div class="legend-item"><span class="legend-dot" style="background: var(--best)"></span>Best · अति शुभ</div>
+    <div class="legend-item"><span class="legend-dot" style="background: var(--good)"></span>Good · शुभ</div>
+    <div class="legend-item"><span class="legend-dot" style="background: var(--mid)"></span>Mid · सम</div>
+    <div class="legend-item"><span class="legend-dot" style="background: var(--avoid)"></span>Avoid · अशुभ</div>
+    <div class="legend-item"><span class="legend-dot" style="background: var(--worst)"></span>Worst · अति अशुभ</div>
+  </div>
+  <div id="results"></div>
+
+  <p class="footer-note">
+    Computed from simplified Surya &amp; Chandra ephemerides with Lahiri sidereal ayanamsa.
+    Daily timings shown at IST (UTC+5:30) for reference Indian latitude (28.6° N, Delhi).
+    For major samskaras &mdash; marriage, griha-pravesh, upanayana &mdash; always cross-check with a qualified jyotishi
+    who can compute the full lagna-bala for your individual horoscope.
+    <span class="closing">॥ शुभं भवतु ॥</span>
+  </p>
+</div>
+
+<script>
+// =====================================================================
+//  ASTRONOMY
+// =====================================================================
+var D2R = Math.PI / 180;
+var R2D = 180 / Math.PI;
+var IST_OFFSET = 5.5;
+var REF_LAT = 28.6139;
+var REF_LON = 77.2090;
+
+function normalizeDeg(d) { d = d % 360; return d < 0 ? d + 360 : d; }
+function pad(n) { return n.toString().padStart(2, '0'); }
+
+function julianDay(utDate) {
+  var Y = utDate.getUTCFullYear();
+  var Mraw = utDate.getUTCMonth() + 1;
+  var D = utDate.getUTCDate() + (utDate.getUTCHours() + utDate.getUTCMinutes()/60 + utDate.getUTCSeconds()/3600) / 24;
+  var y = Y, m = Mraw;
+  if (m <= 2) { y -= 1; m += 12; }
+  var A = Math.floor(y / 100);
+  var B = 2 - A + Math.floor(A / 4);
+  return Math.floor(365.25 * (y + 4716)) + Math.floor(30.6001 * (m + 1)) + D + B - 1524.5;
+}
+
+function sunLongitude(jd) {
+  var T = (jd - 2451545.0) / 36525;
+  var L0 = normalizeDeg(280.46646 + 36000.76983*T + 0.0003032*T*T);
+  var M  = normalizeDeg(357.52911 + 35999.05029*T - 0.0001537*T*T);
+  var Mr = M * D2R;
+  var C  = (1.914602 - 0.004817*T - 0.000014*T*T) * Math.sin(Mr)
+         + (0.019993 - 0.000101*T) * Math.sin(2*Mr)
+         +  0.000289 * Math.sin(3*Mr);
+  return normalizeDeg(L0 + C);
+}
+
+function moonLongitude(jd) {
+  var T = (jd - 2451545.0) / 36525;
+  var Lp = normalizeDeg(218.3164477 + 481267.88123421*T - 0.0015786*T*T + T*T*T/538841 - T*T*T*T/65194000);
+  var D  = normalizeDeg(297.8501921 + 445267.1114034 *T - 0.0018819*T*T + T*T*T/545868);
+  var M  = normalizeDeg(357.5291092 +  35999.0502909*T - 0.0001536*T*T);
+  var Mp = normalizeDeg(134.9633964 + 477198.8675055*T + 0.0087414*T*T);
+  var F  = normalizeDeg( 93.2720950 + 483202.0175233*T - 0.0036539*T*T);
+  var Dr = D*D2R, Mr = M*D2R, Mpr = Mp*D2R, Fr = F*D2R;
+  var dL = 6.288774 * Math.sin(Mpr)
+         + 1.274027 * Math.sin(2*Dr - Mpr)
+         + 0.658314 * Math.sin(2*Dr)
+         + 0.213618 * Math.sin(2*Mpr)
+         - 0.185116 * Math.sin(Mr)
+         - 0.114332 * Math.sin(2*Fr)
+         + 0.058793 * Math.sin(2*Dr - 2*Mpr)
+         + 0.057066 * Math.sin(2*Dr - Mr - Mpr)
+         + 0.053322 * Math.sin(2*Dr + Mpr)
+         + 0.045758 * Math.sin(2*Dr - Mr)
+         - 0.040923 * Math.sin(Mr - Mpr)
+         - 0.034720 * Math.sin(Dr)
+         - 0.030383 * Math.sin(Mr + Mpr)
+         + 0.015327 * Math.sin(2*Dr - 2*Fr)
+         - 0.012528 * Math.sin(Mpr + 2*Fr)
+         + 0.010980 * Math.sin(Mpr - 2*Fr)
+         + 0.010675 * Math.sin(4*Dr - Mpr)
+         + 0.010034 * Math.sin(3*Mpr)
+         + 0.008548 * Math.sin(4*Dr - 2*Mpr);
+  return normalizeDeg(Lp + dL);
+}
+
+function ayanamsa(jd) {
+  var yrs = (jd - 2451545.0) / 365.25;
+  return 23.85258 + 0.0139697 * yrs;
+}
+
+// =====================================================================
+//  PANCHANG TABLES
+// =====================================================================
+var TITHI_NAMES = ['Pratipada','Dvitiya','Tritiya','Chaturthi','Panchami','Shashthi','Saptami','Ashtami','Navami','Dashami','Ekadashi','Dvadashi','Trayodashi','Chaturdashi','Purnima/Amavasya'];
+var TITHI_DEVA = ['प्रतिपदा','द्वितीया','तृतीया','चतुर्थी','पञ्चमी','षष्ठी','सप्तमी','अष्टमी','नवमी','दशमी','एकादशी','द्वादशी','त्रयोदशी','चतुर्दशी','पूर्णिमा/अमावस्या'];
+
+var NAKSHATRA_NAMES = ['Ashvini','Bharani','Krittika','Rohini','Mrigashira','Ardra','Punarvasu','Pushya','Ashlesha','Magha','P. Phalguni','U. Phalguni','Hasta','Chitra','Svati','Vishakha','Anuradha','Jyeshtha','Mula','P. Ashadha','U. Ashadha','Shravana','Dhanishtha','Shatabhisha','P. Bhadrapada','U. Bhadrapada','Revati'];
+var NAKSHATRA_DEVA = ['अश्विनी','भरणी','कृत्तिका','रोहिणी','मृगशिरा','आर्द्रा','पुनर्वसु','पुष्य','आश्लेषा','मघा','पूर्व फाल्गुनी','उत्तर फाल्गुनी','हस्त','चित्रा','स्वाति','विशाखा','अनुराधा','ज्येष्ठा','मूल','पूर्व आषाढ़ा','उत्तर आषाढ़ा','श्रवण','धनिष्ठा','शतभिषा','पूर्व भाद्रपद','उत्तर भाद्रपद','रेवती'];
+
+var YOGA_NAMES = ['Vishkambha','Priti','Ayushman','Saubhagya','Shobhana','Atiganda','Sukarma','Dhriti','Shula','Ganda','Vriddhi','Dhruva','Vyaghata','Harshana','Vajra','Siddhi','Vyatipata','Variyas','Parigha','Shiva','Siddha','Sadhya','Shubha','Shukla','Brahma','Aindra','Vaidhriti'];
+
+var KARANA_MOVABLE = ['Bava','Balava','Kaulava','Taitila','Garaja','Vanija','Vishti'];
+
+var VARA_EN = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+var VARA_DEVA = ['रविवार','सोमवार','मंगलवार','बुधवार','गुरुवार','शुक्रवार','शनिवार'];
+
+var HINDU_LUNAR_MONTH_BY_SOLAR = ['Chaitra','Vaishakha','Jyeshtha','Ashadha','Shravana','Bhadrapada','Ashvina','Kartika','Margashirsha','Pausha','Magha','Phalguna'];
+
+function calculatePanchang(date) {
+  var Y = date.getFullYear(), M = date.getMonth(), D = date.getDate();
+  // Treat as IST sunrise (~06:00 IST = 00:30 UTC)
+  var utDate = new Date(Date.UTC(Y, M, D, 0, 30, 0));
+  var jd = julianDay(utDate);
+  var sunTrop  = sunLongitude(jd);
+  var moonTrop = moonLongitude(jd);
+  var ayan = ayanamsa(jd);
+  var sunSid  = normalizeDeg(sunTrop  - ayan);
+  var moonSid = normalizeDeg(moonTrop - ayan);
+
+  var diff = normalizeDeg(moonTrop - sunTrop);
+  var tithiAbs = Math.floor(diff / 12) + 1;
+  var tithiInPaksha = ((tithiAbs - 1) % 15) + 1;
+  var paksha = tithiAbs <= 15 ? 'Shukla' : 'Krishna';
+
+  var nakshatra = Math.floor(moonSid / (360/27));
+  var nakPada   = Math.floor((moonSid % (360/27)) / (360/27/4)) + 1;
+  var yoga = Math.floor(normalizeDeg(sunSid + moonSid) / (360/27));
+
+  var karanaIdx = Math.floor(diff / 6);
+  var karanaName;
+  if (karanaIdx === 0) karanaName = 'Kimstughna';
+  else if (karanaIdx === 57) karanaName = 'Shakuni';
+  else if (karanaIdx === 58) karanaName = 'Chatushpada';
+  else if (karanaIdx === 59) karanaName = 'Naga';
+  else karanaName = KARANA_MOVABLE[(karanaIdx - 1) % 7];
+
+  var solarSign = Math.floor(sunSid / 30);
+  var lunarMonth = HINDU_LUNAR_MONTH_BY_SOLAR[solarSign];
+
+  return {
+    tithi: tithiInPaksha, tithiAbs: tithiAbs, paksha: paksha,
+    nakshatra: nakshatra, nakPada: nakPada, yoga: yoga, karana: karanaName,
+    vara: date.getDay(), sunSid: sunSid, moonSid: moonSid, lunarMonth: lunarMonth
+  };
+}
+
+// =====================================================================
+//  DAILY TIMINGS
+// =====================================================================
+function dayOfYear(date) {
+  var start = new Date(date.getFullYear(), 0, 0);
+  return Math.floor((date - start) / 86400000);
+}
+function sunriseSunset(date) {
+  var doy = dayOfYear(date);
+  var dec = 23.45 * Math.sin(2 * Math.PI * (284 + doy) / 365) * D2R;
+  var lat = REF_LAT * D2R;
+  var cosH = -Math.tan(lat) * Math.tan(dec);
+  if (cosH > 1 || cosH < -1) return null;
+  var H = Math.acos(cosH) * R2D;
+  var noonLocal = 12 - REF_LON/15 + IST_OFFSET;
+  return { sunrise: noonLocal - H/15, sunset: noonLocal + H/15 };
+}
+function fmtTime(hours) {
+  if (hours == null) return '—';
+  if (hours < 0) hours += 24;
+  if (hours >= 24) hours -= 24;
+  var h = Math.floor(hours);
+  var m = Math.round((hours - h) * 60);
+  if (m === 60) { m = 0; h = (h + 1) % 24; }
+  var ampm = h >= 12 ? 'PM' : 'AM';
+  var h12 = h % 12 === 0 ? 12 : h % 12;
+  return h12 + ':' + pad(m) + ' ' + ampm;
+}
+
+// Rahu Kaal segment per weekday (Sun..Sat)
+var RAHU_SEG = [8, 2, 7, 5, 6, 4, 3];
+function rahuKaal(date) {
+  var ss = sunriseSunset(date);
+  if (!ss) return null;
+  var seg = RAHU_SEG[date.getDay()];
+  var segLen = (ss.sunset - ss.sunrise) / 8;
+  var start = ss.sunrise + (seg - 1) * segLen;
+  return { start: start, end: start + segLen };
+}
+function abhijitMuhurta(date) {
+  var ss = sunriseSunset(date);
+  if (!ss) return null;
+  var muLen = (ss.sunset - ss.sunrise) / 15;
+  var start = ss.sunrise + 7 * muLen;
+  return { start: start, end: start + muLen };
+}
+function brahmaMuhurta(date) {
+  var ss = sunriseSunset(date);
+  if (!ss) return null;
+  return { start: ss.sunrise - 96/60, end: ss.sunrise - 48/60 };
+}
+
+// =====================================================================
+//  ACTIVITIES (shubh karya rules)
+// =====================================================================
+var ACTIVITIES = {
+  marriage: {
+    name: 'Marriage', sanskrit: 'विवाह', icon: '💑',
+    fav_nak: [3,4,9,11,12,14,16,18,20,25,26],
+    unfav_nak: [1,2,5,8,15,17],
+    fav_tithi: [2,3,5,7,10,11,12,13],
+    unfav_tithi: [4,9,14],
+    avoid_amavasya: true, avoid_purnima: false,
+    fav_vara: [1,3,4,5], unfav_vara: [2,6],
+    avoid_bhadra: true, prefer_shukla: true,
+    avoid_months: ['Ashadha','Shravana','Bhadrapada','Ashvina','Pausha'],
+    notes: 'Avoid Rikta tithis (4, 9, 14) and Amavasya. Most auspicious in Magha, Phalguna, Vaishakha, Jyeshtha, and Margashirsha. Tuesday and Saturday contraindicated.'
+  },
+  griha_pravesh: {
+    name: 'Griha Pravesh', sanskrit: 'गृह प्रवेश', icon: '🏡',
+    fav_nak: [3,4,7,11,12,13,14,16,20,21,22,23,25,26],
+    unfav_nak: [1,2,5,8,17,18],
+    fav_tithi: [2,3,5,7,10,11,13],
+    unfav_tithi: [4,8,9,14],
+    avoid_amavasya: true,
+    fav_vara: [1,3,4,5], unfav_vara: [0,2,6],
+    avoid_bhadra: true, prefer_shukla: true,
+    avoid_months: ['Ashadha','Bhadrapada','Ashvina','Pausha'],
+    notes: 'Best in Magha, Phalguna, Vaishakha, Jyeshtha. Avoid Chaturmasya (Ashadha–Kartika). Bhadra karana strictly forbidden.'
+  },
+  new_job: {
+    name: 'New Job', sanskrit: 'नौकरी आरंभ', icon: '💼',
+    fav_nak: [0,3,4,6,7,11,12,16,20,21,26],
+    unfav_nak: [2,5,8,18],
+    fav_tithi: [2,3,5,7,10,11,13],
+    unfav_tithi: [4,9,14],
+    avoid_amavasya: true,
+    fav_vara: [1,3,4,5], unfav_vara: [2,6],
+    avoid_bhadra: true, prefer_shukla: true,
+    notes: 'Wednesday (Mercury — intellect) and Thursday (Jupiter — prosperity) are supreme for joining a new role.'
+  },
+  new_vehicle: {
+    name: 'New Vehicle', sanskrit: 'नया वाहन', icon: '🚗',
+    fav_nak: [0,7,12,13,14,16,21,26],
+    unfav_nak: [1,5,8,18],
+    fav_tithi: [2,3,5,7,10,11,13],
+    unfav_tithi: [4,9,14],
+    avoid_amavasya: true,
+    fav_vara: [1,3,4,5], unfav_vara: [6],
+    avoid_bhadra: true, prefer_shukla: true,
+    notes: 'Drive a new vehicle home on Ashvini, Pushya, or Revati for safe journeys.'
+  },
+  business_start: {
+    name: 'New Business', sanskrit: 'व्यापार आरंभ', icon: '🏛️',
+    fav_nak: [7,11,12,13,16,20,21,22,26],
+    unfav_nak: [1,5,8,17,18],
+    fav_tithi: [2,3,5,7,10,11,12,13],
+    unfav_tithi: [4,9,14,8],
+    avoid_amavasya: true,
+    fav_vara: [1,3,4,5], unfav_vara: [0,2,6],
+    avoid_bhadra: true, prefer_shukla: true,
+    notes: 'Pushya nakshatra is supreme for new ventures. Thursday boosts profits, Friday strengthens partnerships.'
+  },
+  property_purchase: {
+    name: 'Property Buy', sanskrit: 'संपत्ति क्रय', icon: '🏘️',
+    fav_nak: [3,4,7,11,12,16,20,21,25,26],
+    unfav_nak: [1,5,8,18],
+    fav_tithi: [2,3,5,10,11,13],
+    unfav_tithi: [4,9,14,8],
+    avoid_amavasya: true,
+    fav_vara: [1,3,4,5], unfav_vara: [2,6],
+    avoid_bhadra: true, prefer_shukla: true,
+    notes: 'Earth-anchored Uttara nakshatras (U.Phalguni, U.Ashadha, U.Bhadrapada) and Rohini make stable acquisitions.'
+  },
+  travel: {
+    name: 'Travel · Yatra', sanskrit: 'यात्रा', icon: '🧭',
+    fav_nak: [0,4,7,12,16,21,26],
+    unfav_nak: [1,5,8,17],
+    fav_tithi: [2,3,5,7,10,11,13],
+    unfav_tithi: [4,9,14],
+    avoid_amavasya: true,
+    fav_vara: [1,3,4,5], unfav_vara: [0,6],
+    avoid_bhadra: true,
+    notes: 'Mind dishā-shūla: avoid East on Mon/Sat, North on Tue, West on Wed/Fri, South on Thu. Do not begin travel in Panchaka.'
+  },
+  mundan: {
+    name: 'Mundan', sanskrit: 'मुंडन', icon: '👶',
+    fav_nak: [0,4,6,7,12,13,14,17,21,22,23],
+    unfav_nak: [1,2,5,8,9,18,25,26],
+    fav_tithi: [2,3,5,7,10,11,13],
+    unfav_tithi: [4,9,14,8],
+    avoid_amavasya: true, avoid_purnima: true,
+    fav_vara: [1,3,4,5], unfav_vara: [0,2,6],
+    avoid_bhadra: true, prefer_shukla: true,
+    notes: "Chudakarana is best performed in the child's 1st, 3rd, or 5th year. Not during eclipse months."
+  },
+  annaprashan: {
+    name: 'Annaprashan', sanskrit: 'अन्नप्राशन', icon: '🍚',
+    fav_nak: [0,3,4,6,7,12,13,16,21,26],
+    unfav_nak: [1,2,5,8,9,17,18],
+    fav_tithi: [2,3,5,7,10,11,12,13],
+    unfav_tithi: [4,9,14],
+    avoid_amavasya: true,
+    fav_vara: [1,3,4,5], unfav_vara: [0,2,6],
+    avoid_bhadra: true, prefer_shukla: true,
+    notes: 'Traditionally in the 6th–8th month for boys, 5th–7th month for girls.'
+  },
+  upanayan: {
+    name: 'Upanayan', sanskrit: 'उपनयन', icon: '🪡',
+    fav_nak: [0,4,7,12,13,14,21,22,26],
+    unfav_nak: [1,2,5,8,9,17,18],
+    fav_tithi: [2,3,5,10,11,12],
+    unfav_tithi: [4,8,9,14],
+    avoid_amavasya: true, avoid_purnima: true,
+    fav_vara: [1,3,4], unfav_vara: [0,2,6],
+    avoid_bhadra: true, prefer_shukla: true,
+    notes: 'Sacred-thread ceremony — perform in Uttarayana (Makara Sankranti to Karka Sankranti).'
+  },
+  vidyarambha: {
+    name: 'Education Start', sanskrit: 'विद्यारंभ', icon: '📜',
+    fav_nak: [0,6,7,11,12,13,20,21,25,26],
+    unfav_nak: [1,2,5,8,18],
+    fav_tithi: [2,3,5,6,10,11,12,13],
+    unfav_tithi: [4,9,14],
+    avoid_amavasya: true,
+    fav_vara: [1,3,4,5], unfav_vara: [2,6],
+    avoid_bhadra: true, prefer_shukla: true,
+    notes: 'Wednesday (Mercury — buddhi) and Thursday (Jupiter — wisdom) are supreme. Sarasvati Puja day is ideal.'
+  },
+  namkaran: {
+    name: 'Namkaran', sanskrit: 'नामकरण', icon: '🌸',
+    fav_nak: [0,3,4,6,7,11,12,13,14,16,20,21,22,25,26],
+    unfav_nak: [1,2,5,8,9,17,18],
+    fav_tithi: [2,3,5,7,10,11,12,13],
+    unfav_tithi: [4,9,14,8],
+    avoid_amavasya: true,
+    fav_vara: [1,3,4,5], unfav_vara: [0,2,6],
+    avoid_bhadra: true, prefer_shukla: true,
+    notes: 'Traditionally on the 11th or 12th day after birth, otherwise in the 1st or 2nd month.'
+  },
+  investment: {
+    name: 'Investment', sanskrit: 'निवेश', icon: '💰',
+    fav_nak: [7,11,12,16,20,21,22,26],
+    unfav_nak: [1,2,5,8,17,18],
+    fav_tithi: [2,3,5,10,11,13],
+    unfav_tithi: [4,9,14,8],
+    avoid_amavasya: true,
+    fav_vara: [3,4,5], unfav_vara: [2,6],
+    avoid_bhadra: true, prefer_shukla: true,
+    notes: 'Pushya is unmatched for wealth. Thursday and Friday accelerate dhana-yoga. Avoid Saturn-ruled Saturday for new investments.'
+  }
+};
+
+var BAD_YOGAS = [5,8,9,12,14,16,18,26];
+var GREAT_YOGAS = [2,3,6,10,11,15,20,21,22,24];
+var PANCHAK_NAKSHATRAS = [22,23,24,25,26];
+
+function inSet(arr, v) { return arr.indexOf(v) !== -1; }
+
+// =====================================================================
+//  SCORING
+// =====================================================================
+function scoreDay(p, activityKey) {
+  var a = ACTIVITIES[activityKey];
+  var score = 50;
+  var reasons = [];
+
+  // Nakshatra
+  var nakName = NAKSHATRA_NAMES[p.nakshatra];
+  if (inSet(a.fav_nak, p.nakshatra)) {
+    score += 25;
+    reasons.push({ type: 'positive', text: 'Nakshatra ' + nakName + ' — highly favourable for ' + a.name.toLowerCase() + '.' });
+  } else if (inSet(a.unfav_nak, p.nakshatra)) {
+    score -= 22;
+    reasons.push({ type: 'negative', text: 'Nakshatra ' + nakName + ' — contraindicated.' });
+  } else {
+    reasons.push({ type: 'neutral', text: 'Nakshatra ' + nakName + ' — neutral.' });
+  }
+
+  // Tithi
+  var isAma = p.tithiAbs === 30;
+  var isPur = p.tithiAbs === 15;
+  if (isAma && a.avoid_amavasya) {
+    score -= 22;
+    reasons.push({ type: 'negative', text: 'Amavasya — moonless day, strongly avoided for new beginnings.' });
+  } else if (isPur && a.avoid_purnima) {
+    score -= 14;
+    reasons.push({ type: 'negative', text: 'Purnima — generally avoided for this rite.' });
+  } else if (inSet(a.fav_tithi, p.tithi)) {
+    score += 15;
+    reasons.push({ type: 'positive', text: 'Tithi ' + TITHI_NAMES[p.tithi-1] + ' (' + p.paksha + ') — auspicious.' });
+  } else if (inSet(a.unfav_tithi, p.tithi)) {
+    score -= 15;
+    reasons.push({ type: 'negative', text: 'Tithi ' + TITHI_NAMES[p.tithi-1] + ' (Rikta) — unfavourable.' });
+  }
+
+  // Vara
+  if (inSet(a.fav_vara, p.vara)) {
+    score += 10;
+    reasons.push({ type: 'positive', text: VARA_EN[p.vara] + ' — favourable weekday.' });
+  } else if (inSet(a.unfav_vara, p.vara)) {
+    score -= 10;
+    reasons.push({ type: 'negative', text: VARA_EN[p.vara] + ' — unfavourable weekday.' });
+  }
+
+  // Yoga
+  if (inSet(BAD_YOGAS, p.yoga)) {
+    score -= 12;
+    reasons.push({ type: 'negative', text: 'Yoga ' + YOGA_NAMES[p.yoga] + ' — inauspicious.' });
+  } else if (inSet(GREAT_YOGAS, p.yoga)) {
+    score += 6;
+    reasons.push({ type: 'positive', text: 'Yoga ' + YOGA_NAMES[p.yoga] + ' — supportive.' });
+  }
+
+  // Karana
+  if (p.karana === 'Vishti' && a.avoid_bhadra) {
+    score -= 12;
+    reasons.push({ type: 'negative', text: 'Vishti (Bhadra) karana — forbidden for shubh karya.' });
+  }
+
+  // Paksha
+  if (a.prefer_shukla && p.paksha === 'Shukla') score += 3;
+  else if (a.prefer_shukla && p.paksha === 'Krishna') score -= 1;
+
+  // Avoid-months
+  if (a.avoid_months && a.avoid_months.indexOf(p.lunarMonth) !== -1) {
+    score -= 14;
+    reasons.push({ type: 'negative', text: 'Lunar month ' + p.lunarMonth + ' — traditionally avoided for ' + a.name.toLowerCase() + '.' });
+  }
+
+  // Panchaka for travel / griha-pravesh
+  if ((activityKey === 'travel' || activityKey === 'griha_pravesh') && inSet(PANCHAK_NAKSHATRAS, p.nakshatra)) {
+    score -= 4;
+    if (activityKey === 'travel')
+      reasons.push({ type: 'negative', text: 'Panchaka — caution advised for southward travel.' });
+  }
+
+  if (score < 0) score = 0;
+  if (score > 100) score = 100;
+  score = Math.round(score);
+
+  var rating;
+  if (score >= 82) rating = 'best';
+  else if (score >= 68) rating = 'good';
+  else if (score >= 50) rating = 'mid';
+  else if (score >= 32) rating = 'avoid';
+  else rating = 'worst';
+
+  return { score: score, rating: rating, reasons: reasons };
+}
+
+// =====================================================================
+//  STATE & UI
+// =====================================================================
+var state = {
+  activity: 'marriage',
+  range: 'today',
+  bestOnly: false
+};
+
+var activityGrid = document.getElementById('activityGrid');
+Object.keys(ACTIVITIES).forEach(function(key) {
+  var a = ACTIVITIES[key];
+  var card = document.createElement('div');
+  card.className = 'activity-card' + (key === state.activity ? ' selected' : '');
+  card.dataset.key = key;
+  card.innerHTML =
+    '<span class="a-icon">' + a.icon + '</span>' +
+    '<div class="a-name">' + a.name + '</div>' +
+    '<div class="a-sanskrit">' + a.sanskrit + '</div>';
+  card.addEventListener('click', function() {
+    state.activity = key;
+    var cards = document.querySelectorAll('.activity-card');
+    for (var i = 0; i < cards.length; i++) {
+      cards[i].classList.toggle('selected', cards[i].dataset.key === key);
+    }
+    render();
+  });
+  activityGrid.appendChild(card);
+});
+
+var RANGES = [
+  { key: 'today',    label: 'Today' },
+  { key: 'tomorrow', label: 'Tomorrow' },
+  { key: 'week',     label: 'Next 7 days' },
+  { key: 'month',    label: 'This month' },
+  { key: '3month',   label: 'Next 3 months' },
+  { key: 'year',     label: 'Next year' },
+  { key: 'custom',   label: 'Custom…' }
+];
+var rangeButtons = document.getElementById('rangeButtons');
+RANGES.forEach(function(r) {
+  var btn = document.createElement('button');
+  btn.className = 'range-btn' + (r.key === state.range ? ' selected' : '');
+  btn.dataset.key = r.key;
+  btn.textContent = r.label;
+  btn.addEventListener('click', function() {
+    state.range = r.key;
+    var btns = document.querySelectorAll('.range-btn');
+    for (var i = 0; i < btns.length; i++) {
+      btns[i].classList.toggle('selected', btns[i].dataset.key === r.key);
+    }
+    document.getElementById('customInputs').classList.toggle('show', r.key === 'custom');
+    if (r.key === 'custom') {
+      var today = new Date();
+      var t1 = new Date(today); t1.setDate(t1.getDate() + 14);
+      var dateFrom = document.getElementById('dateFrom');
+      var dateTo = document.getElementById('dateTo');
+      if (!dateFrom.value) dateFrom.value = today.toISOString().slice(0,10);
+      if (!dateTo.value)   dateTo.value   = t1.toISOString().slice(0,10);
+    }
+    render();
+  });
+  rangeButtons.appendChild(btn);
+});
+
+document.getElementById('dateFrom').addEventListener('change', function() { state.range = 'custom'; render(); });
+document.getElementById('dateTo').addEventListener('change',   function() { state.range = 'custom'; render(); });
+
+var toggle = document.getElementById('bestOnlyToggle');
+toggle.addEventListener('click', function() {
+  state.bestOnly = !state.bestOnly;
+  toggle.classList.toggle('on', state.bestOnly);
+  toggle.setAttribute('aria-checked', state.bestOnly);
+  render();
+});
+
+// =====================================================================
+//  RENDER
+// =====================================================================
+function getDateRange() {
+  var today = new Date();
+  today.setHours(0, 0, 0, 0);
+  var from = new Date(today), to = new Date(today);
+  switch (state.range) {
+    case 'today': break;
+    case 'tomorrow': from.setDate(from.getDate() + 1); to = new Date(from); break;
+    case 'week':  to.setDate(to.getDate() + 6); break;
+    case 'month': to = new Date(today.getFullYear(), today.getMonth() + 1, 0); break;
+    case '3month': to.setDate(to.getDate() + 90); break;
+    case 'year':   to.setDate(to.getDate() + 364); break;
+    case 'custom':
+      var f = document.getElementById('dateFrom').value;
+      var t = document.getElementById('dateTo').value;
+      if (f) from = new Date(f + 'T00:00:00');
+      if (t) to   = new Date(t + 'T00:00:00');
+      if (to < from) to = new Date(from);
+      break;
+  }
+  return { from: from, to: to };
+}
+
+function render() {
+  var range = getDateRange();
+  var days = [];
+  for (var d = new Date(range.from); d <= range.to; d.setDate(d.getDate() + 1)) {
+    days.push(new Date(d));
+  }
+  var enriched = days.map(function(date) {
+    var p = calculatePanchang(date);
+    var s = scoreDay(p, state.activity);
+    return {
+      date: date, panchang: p, score: s,
+      rahu: rahuKaal(date), abhi: abhijitMuhurta(date), brahma: brahmaMuhurta(date),
+      sunrise: sunriseSunset(date)
+    };
+  });
+
+  var view = enriched;
+  if (state.bestOnly) {
+    view = view.filter(function(e) { return e.score.rating === 'best' || e.score.rating === 'good'; });
+  }
+  view.sort(function(a, b) { return a.date - b.date; });
+
+  renderSummary(enriched, view);
+  renderResults(view);
+}
+
+function renderSummary(all, view) {
+  var counts = { best: 0, good: 0, mid: 0, avoid: 0, worst: 0 };
+  all.forEach(function(e) { counts[e.score.rating]++; });
+  var total = all.length;
+  var act = ACTIVITIES[state.activity];
+  var html =
+    '<strong>' + total + '</strong> day' + (total !== 1 ? 's' : '') + ' examined for <em>' + act.name.toLowerCase() + '</em> · ' +
+    '<span style="color: var(--best); font-weight: 500;">' + counts.best + ' best</span> · ' +
+    '<span style="color: var(--good); font-weight: 500;">' + counts.good + ' good</span> · ' +
+    '<span style="color: var(--mid); font-weight: 500;">' + counts.mid + ' mid</span> · ' +
+    '<span style="color: var(--avoid); font-weight: 500;">' + counts.avoid + ' avoid</span> · ' +
+    '<span style="color: var(--worst); font-weight: 500;">' + counts.worst + ' worst</span>';
+  if (view.length !== total) html += ' &nbsp; · &nbsp; <em>showing ' + view.length + '</em>';
+  document.getElementById('summary').innerHTML = html;
+}
+
+function renderResults(view) {
+  var container = document.getElementById('results');
+  if (view.length === 0) {
+    container.innerHTML = '<div class="empty"><span class="om">ॐ</span>No days match the current filter. Try widening the range or disabling the "auspicious only" toggle.</div>';
+    return;
+  }
+  var act = ACTIVITIES[state.activity];
+  var truncated = false;
+  var display = view;
+  if (display.length > 120) {
+    display = display.slice(0, 120);
+    truncated = true;
+  }
+  var html = display.map(function(e, i) { return renderDayCard(e, act, i); }).join('');
+  if (truncated) html += '<div class="empty" style="padding: 24px;">Showing first 120 days. Use the "auspicious only" toggle, or narrow the range, to see more.</div>';
+  container.innerHTML = html;
+}
+
+function renderDayCard(e, act, idx) {
+  var p = e.panchang;
+  var dateShort = e.date.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+  var ratingLabels = {
+    best:  'Best · अति शुभ',
+    good:  'Good · शुभ',
+    mid:   'Mid · सम',
+    avoid: 'Avoid · अशुभ',
+    worst: 'Worst · अति अशुभ'
+  };
+  var ratingLabel = ratingLabels[e.score.rating];
+
+  var reasonsHtml = e.score.reasons.map(function(r) {
+    var sym = r.type === 'positive' ? '✓' : r.type === 'negative' ? '✕' : '·';
+    return '<div class="reason ' + r.type + '"><span class="reason-icon">' + sym + '</span><span>' + r.text + '</span></div>';
+  }).join('');
+
+  var sunriseStr = e.sunrise ? fmtTime(e.sunrise.sunrise) + ' → ' + fmtTime(e.sunrise.sunset) : '—';
+  var abhiStr = e.abhi ? fmtTime(e.abhi.start) + ' – ' + fmtTime(e.abhi.end) : '—';
+  var rahuStr = e.rahu ? fmtTime(e.rahu.start) + ' – ' + fmtTime(e.rahu.end) : '—';
+  var brahmaStr = e.brahma ? fmtTime(e.brahma.start) + ' – ' + fmtTime(e.brahma.end) : '—';
+
+  var delay = Math.min(idx * 30, 600);
+  var nakLabel = NAKSHATRA_NAMES[p.nakshatra] + ' · Pada ' + p.nakPada;
+
+  return (
+    '<div class="day-card" data-rating="' + e.score.rating + '" style="animation-delay: ' + delay + 'ms">' +
+      '<div class="day-header">' +
+        '<div class="day-date">' +
+          '<span class="day-gregorian">' + dateShort + '</span>' +
+          '<span class="day-weekday">' + VARA_EN[p.vara] + '</span>' +
+          '<span class="day-vara-hindi">' + VARA_DEVA[p.vara] + ' · ' + p.lunarMonth + ' māsa</span>' +
+        '</div>' +
+        '<div class="day-rating-cluster">' +
+          '<div class="score-block"><span class="score-num">' + e.score.score + '</span><span class="score-out">/100</span></div>' +
+          '<span class="rating-badge" data-rating="' + e.score.rating + '">' + ratingLabel + '</span>' +
+        '</div>' +
+      '</div>' +
+
+      '<div class="panchang-grid">' +
+        '<div class="p-item"><span class="p-label">Tithi</span><span class="p-value">' + TITHI_NAMES[p.tithi-1] + ' · ' + p.paksha + '<span class="hindi">' + TITHI_DEVA[p.tithi-1] + ' (' + (p.paksha === 'Shukla' ? 'शुक्ल' : 'कृष्ण') + ')</span></span></div>' +
+        '<div class="p-item"><span class="p-label">Nakshatra</span><span class="p-value">' + nakLabel + '<span class="hindi">' + NAKSHATRA_DEVA[p.nakshatra] + '</span></span></div>' +
+        '<div class="p-item"><span class="p-label">Yoga</span><span class="p-value">' + YOGA_NAMES[p.yoga] + '</span></div>' +
+        '<div class="p-item"><span class="p-label">Karana</span><span class="p-value">' + p.karana + '</span></div>' +
+        '<div class="p-item"><span class="p-label">Sunrise → Sunset</span><span class="p-value">' + sunriseStr + '</span></div>' +
+      '</div>' +
+
+      '<div class="reasons">' + reasonsHtml + '</div>' +
+
+      '<div class="timings">' +
+        '<div class="timing-block auspicious">' +
+          '<div class="timing-label">Abhijit Muhurta</div>' +
+          '<div class="timing-value">' + abhiStr + '</div>' +
+          '<div class="timing-sub">universally auspicious window</div>' +
+        '</div>' +
+        '<div class="timing-block auspicious">' +
+          '<div class="timing-label">Brahma Muhurta</div>' +
+          '<div class="timing-value">' + brahmaStr + '</div>' +
+          '<div class="timing-sub">pre-dawn · pure energy</div>' +
+        '</div>' +
+        '<div class="timing-block inauspicious">' +
+          '<div class="timing-label">Rahu Kaal</div>' +
+          '<div class="timing-value">' + rahuStr + '</div>' +
+          '<div class="timing-sub">avoid all new beginnings</div>' +
+        '</div>' +
+      '</div>' +
+
+      '<div class="activity-note">' + act.notes + '</div>' +
+    '</div>'
+  );
+}
+
+render();
+</script>
+</body>
+</html>
